@@ -25,20 +25,19 @@ export const getGithubToken = async ()=>{
     }
     return account.accessToken;
 }
+export async function fetchUserContribution(token: string, username: string) {
+    const octokit = new Octokit({ auth: token });
 
-export async function fetchUserContribution(token:string, username:string){
-    const octokit = new Octokit({auth:token})
-
-    const query =`
-    query($username:String){
+    const query = `
+    query($username:String!){
         user(login:$username){
-            contributionCollection{
-                contributionCalender{
+            contributionsCollection{
+                contributionCalendar{
                     totalContributions
                     weeks{
-                        contributiondays{
+                        contributionDays{
                             contributionCount
-                            data
+                            date
                             color
                         }
                     }
@@ -46,29 +45,22 @@ export async function fetchUserContribution(token:string, username:string){
             }
         }
     }
-    `
-
-    // interface contributiondata{
-    //     user:{
-    //         contributionCollection:{
-    //             contributionCalender:{
-    //                 totalContributions:number,
-    //                 weeks:{
-    //                     contributionCount:number,
-    //                     data:string | Date,
-    //                     color:string
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
+    `;
 
     try {
-        const response:any = await octokit.graphql(query,{
-            username
-        })
-        return response.user.contributionCollection.contributionCalender
+        const response = await octokit.graphql<{
+            user: {
+                contributionsCollection: {
+                    contributionCalendar: any
+                }
+            }
+        }>(query, { username });
+
+        return response.user.contributionsCollection.contributionCalendar;
+
     } catch (error) {
-        
+        console.error("GitHub GraphQL ERROR:", error);
+        throw error; // 🔥 IMPORTANT
     }
 }
+        
