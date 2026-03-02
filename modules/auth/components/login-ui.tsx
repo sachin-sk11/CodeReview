@@ -1,6 +1,7 @@
 "use client"
 
 import {useState} from "react";
+import { useRouter } from "next/navigation";
 import { signIn } from "@/lib/auth-client";
 import { CloudCog, GithubIcon } from "lucide-react";
 
@@ -8,12 +9,17 @@ const LoginUI= ()=>{
 
     const [isLoading, setIsLoading] = useState(false);
 
+    const router = useRouter();
+
     const handleGithubLogin=async ()=>{
         setIsLoading(true);
         try {
             await signIn.social({
                 provider:"github"
-            })
+            });
+            // after successful OAuth flow the app will reload;
+            // if we still end up here push to dashboard just in case
+            router.push("/dashboard");
         } catch (error) {
             console.log("Login Error", error);
             setIsLoading(false);
