@@ -13,5 +13,9 @@ export const auth = betterAuth({
             clientSecret:process.env.GITHUB_CLIENT_SECRET,
             scope:["repo"]
         }
-    }
+    },
+    trustedOrigins: [
+    "http://localhost:3000",
+    process.env.NEXT_PUBLIC_APP_BASE_URL!,
+  ].filter(Boolean) as string[],
 });
