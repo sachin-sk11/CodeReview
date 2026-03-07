@@ -6,7 +6,7 @@ import {auth} from "@/lib/auth"
 
 export const requireAuth = async () =>{
     const headerStore = await headers()
-
+    
     const session = await auth.api.getSession({
         headers: headerStore
     })
