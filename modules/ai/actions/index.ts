@@ -4,6 +4,7 @@ import { inngest } from "@/inngest/client";
 import prisma from "@/lib/db"
 import { getPullRequestDiff } from "@/modules/github/lib/github";
 import { success } from "zod";
+import { canCreateReview,incrementReviewCount } from "@/modules/payment/lib/subscription";
 
 export async function reviewPullRequest(
     owner:string,
@@ -33,6 +34,12 @@ export async function reviewPullRequest(
         throw new Error(`repository ${owner}/${repo} not found in database`)
     }
 
+    const canReview = await canCreateReview(repository.user.id, repository.id)
+
+    if(!canReview){
+        throw new Error("Review limit reached for this repository. Please upgrade to pro for unlimited reviews ")
+    }
+
     const githubAccount = repository.user.accounts[0];
 
     if(!githubAccount.accessToken){
@@ -52,6 +59,8 @@ export async function reviewPullRequest(
             userId:repository.user.id
         }
     })
+
+    await incrementReviewCount(repository.user.id, repository.id) 
 
     return {success:true, message:"Review Queued"}
 }catch(error){
