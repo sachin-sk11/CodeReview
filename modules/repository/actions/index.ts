@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 import { createWebhook, getRepository } from "@/modules/github/lib/github"
 import { inngest } from "@/inngest/client"
+import { canConnectRepository,decrementRepositoryCount,incrementRepositoryCount } from "@/modules/payment/lib/subscription"
 
 
 export const fetchRepositories = async (page:number=1 ,perPage:number =10)=>{
@@ -42,6 +43,11 @@ export const connectRepository = async(owner:string, repo:string, githubId:numbe
     }
 
     //TODO :check if user can connect repo
+    const canConnect = await canConnectRepository(session.user.id);
+
+    if(!canConnect){
+        throw new Error("Repository limit reached .Please upgrade to Pro for unlimited repository")
+    }
 
     const webhook = await createWebhook(owner,repo)
 
@@ -56,9 +62,10 @@ export const connectRepository = async(owner:string, repo:string, githubId:numbe
                 userId:session.user.id
             }
         })
-    }
+    
 
     //TODO: increment repository count for usage tracking
+    await incrementRepositoryCount(session.user.id)
 
     // trigger repository indexing for RAG
     try {
@@ -73,6 +80,7 @@ export const connectRepository = async(owner:string, repo:string, githubId:numbe
     } catch (error) {
         console.error("Failed to trigger repository indexing",error);
     }
+}
 
     return webhook;
 }
