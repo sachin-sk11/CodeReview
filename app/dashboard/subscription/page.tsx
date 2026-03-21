@@ -48,7 +48,7 @@ export default function SubscriptionPage(){
     })
 
     useEffect(()=>{
-        if(success === "true"){
+        if(success === "true" || data?.user?.polarCustomerId){
             const sync = async () =>{
                 try {
                     await syncSubscriptionStatus()
@@ -59,7 +59,7 @@ export default function SubscriptionPage(){
             }
             sync();
         }
-    },[success,refetch]);
+    },[success,data?.user?.polarCustomerId,refetch]);
 
     if(isLoading){
         return (
