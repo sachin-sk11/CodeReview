@@ -13,7 +13,6 @@ import {useState, useEffect} from "react"
 import {toast} from "sonner"
 import { getSubscriptionData, syncSubscriptionStatus } from "@/modules/payment/action"
 import { Spinner } from "@/components/ui/spinner"
-import { syncBuiltinESMExports } from "module"
 
 
 const PLAN_FEATURES ={

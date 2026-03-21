@@ -1,27 +1,17 @@
 "use client"
 
 import React from "react"
-import {Card,CardContent,CardDescription,CardHeader,CardTitle} from "@/components/ui/card"
+import {Card,CardDescription,CardHeader,CardTitle} from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ExternalLink,Star,Search } from "lucide-react"
+import { ExternalLink,Search } from "lucide-react"
 import { useState,useEffect,useRef } from "react"
 import { useRepositories } from "@/modules/repository/hooks/use-repositories"
 import { RepositoryListSkeleton } from "@/modules/repository/components/repository-skelton"
 import { useConnectedRepository } from "@/modules/repository/hooks/use-connect-repositry"
 
-interface Repository{
-    id:number 
-    name : string
-    full_name :string
-    description :string | null
-    html_url : string
-    stargazers_count :number
-    language :string|null
-    topics:string[]
-    isConnected?:boolean
-}
+type Repository = Awaited<ReturnType<typeof import("@/modules/repository/actions").fetchRepositories>>[number];
 
 
 const RepositoryPage = () =>{
@@ -124,7 +114,7 @@ const RepositoryPage = () =>{
 
             <div className="grid gap-4">
             {
-                filteredRepositories.map((repo:any)=>(
+                filteredRepositories.map((repo:Repository)=>(
                     <Card key={repo.id} className="hover:shadow-md transition-shadow">
                         <CardHeader>
                             <div className="flex items-start justify-between">
@@ -138,7 +128,7 @@ const RepositoryPage = () =>{
                                 </div>
                                 <div className="flex gap-2">
                                     <Button variant="ghost" size="icon" asChild>
-                                        <a href={repo.html_url} target="_blank" rel="noopener no referer">
+                                        <a href={repo.html_url} target="_blank" rel="noopener noreferrer">
                                         <ExternalLink className="h-4 w-4"/>
                                         </a>
                                     </Button>

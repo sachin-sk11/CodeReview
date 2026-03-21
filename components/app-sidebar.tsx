@@ -1,10 +1,9 @@
 "use client"
 import React from "react";
 import { useTheme } from "next-themes";
-import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
-import {Github,BookOpen,Settings,Moon, Sun,LogOut} from "lucide-react";
+import {Github,BookOpen,Settings,Moon, Sun} from "lucide-react";
 import {
     Sidebar,
     SidebarContent,
@@ -23,13 +22,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 export const AppSidebar = () =>{
     const { theme, setTheme } = useTheme();
-    const [mounted, setMounted] = useState(false);
+    const mounted = React.useSyncExternalStore(
+        () => () => {},
+        () => true,
+        () => false
+    );
     const pathname = usePathname();
     const { data:session } = useSession();
-
-    useEffect(()=>{
-        setMounted(true);
-    },[]);
 
 const navigationItems =[
         {
