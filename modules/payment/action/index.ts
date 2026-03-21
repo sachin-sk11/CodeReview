@@ -5,7 +5,12 @@ import { getRemainingLimits,updateUserTier } from "../lib/subscription";
 import { headers } from "next/headers";
 import { polarClient } from "../config/polar";
 import prisma from "@/lib/db"
-import { email } from "zod";
+
+type PolarSubscription = {
+    id: string;
+    status: string;
+    createdAt?: string | Date;
+};
 
 export interface SubscriptionData{
     user:{
@@ -89,11 +94,15 @@ export async function syncSubscriptionStatus() {
             customerId: user.polarCustomerId,
         });
 
-        const subscriptions = result.result?.items || [];
+        const subscriptions = (result.result?.items || []) as PolarSubscription[];
 
         // Find the most relevant subscription (active or most recent)
-        const activeSub = subscriptions.find((sub: any) => sub.status === 'active');
-        const latestSub = subscriptions[0]; // Assuming API returns sorted or we should sort
+        const activeSub = subscriptions.find((sub) => sub.status === 'active');
+        const latestSub = [...subscriptions].sort((a, b) => {
+            const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return bTime - aTime;
+        })[0];
 
         if (activeSub) {
             await updateUserTier(user.id, "PRO", "ACTIVE", activeSub.id);

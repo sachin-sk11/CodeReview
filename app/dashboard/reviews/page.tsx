@@ -8,6 +8,8 @@ import { useQuery } from "@tanstack/react-query"
 import { getReviews } from "@/modules/review/actions"
 import { formatDistanceToNow } from "date-fns"
 
+type ReviewItem = Awaited<ReturnType<typeof getReviews>>[number];
+
 export default function Reviewpage(){
     const {data:reviews,isLoading} = useQuery({
         queryKey:["reviews"],
@@ -37,7 +39,7 @@ export default function Reviewpage(){
                     </Card>
                 ):(
                     <div className="grid gap-4">
-                        {reviews?.map((review:any)=>(
+                        {reviews?.map((review:ReviewItem)=>(
                             <Card key={review.id} className="hover:shadow-md transition-shadow">
                                 <CardHeader>
                                     <div className="flex items-center justify-between">
@@ -64,7 +66,7 @@ export default function Reviewpage(){
                                                 )}
                                             </div>
                                             <CardDescription>
-                                                {review.repository.fullName} + PR #{review.prNumber}
+                                                {review.repository.fullname} + PR #{review.prNumber}
                                             </CardDescription>
                                         </div>
                                         <Button variant="ghost" size="icon" asChild>

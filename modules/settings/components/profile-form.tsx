@@ -6,13 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useQuery,useMutation,useQueryClient } from "@tanstack/react-query";
 import { updateUserProfile,getUserprofile } from "../actions";
-import {useEffect, useState} from "react";
 import {toast} from "sonner";
 
 export function ProfileForm(){
     const queryClient = useQueryClient();
-    const [name, setName] = useState("")
-    const [email, setEmail] = useState("");
 
     const {data:profile,isLoading}= useQuery({
         queryKey:["user-profile"],
@@ -20,13 +17,6 @@ export function ProfileForm(){
         staleTime:1000*60*5,
         refetchOnWindowFocus:false
     });
-
-    useEffect(()=>{
-        if(profile){
-            setName(profile.name || "");
-            setEmail(profile.email || "");
-        }
-    },[profile]);
 
     const updateMutation = useMutation({
         mutationFn:async (data:{name:string;email:string})=>{
@@ -41,9 +31,13 @@ export function ProfileForm(){
         onError:()=>toast.error("Failed to update profile")
     })
 
-    const handleSubmit = (e:React.FormEvent)=>{
+    const handleSubmit = (e:React.FormEvent<HTMLFormElement>)=>{
         e.preventDefault();
-        updateMutation.mutate({name,email});
+        const formData = new FormData(e.currentTarget);
+        updateMutation.mutate({
+            name:String(formData.get("name") || ""),
+            email:String(formData.get("email") || ""),
+        });
     }
 
     if(isLoading){
@@ -75,9 +69,9 @@ export function ProfileForm(){
                         <Label htmlFor="name">Full Name</Label>
                         <Input
                             id="name"
+                            name="name"
                             placeholder="Ajay A E"
-                            value={name}
-                            onChange={(e)=>setName(e.target.value)}
+                            defaultValue={profile?.name || ""}
                             disabled={updateMutation.isPending}
                         />
                     </div>
@@ -85,10 +79,10 @@ export function ProfileForm(){
                         <Label htmlFor="email">Email</Label>
                         <Input 
                             id="email"
+                            name="email"
                             type="email"
                             placeholder="ajay@example.com"
-                            value={email}
-                            onChange={(e)=>setEmail(e.target.value)}
+                            defaultValue={profile?.email || ""}
                             disabled={updateMutation.isPending}
                         />
                     </div>

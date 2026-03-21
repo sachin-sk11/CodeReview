@@ -9,6 +9,19 @@ import { headers } from "next/headers"
 import { Octokit } from "octokit"
 import prisma from "@/lib/db"
 
+type ContributionDay = {
+    date: string;
+    contributionCount: number;
+};
+
+type ContributionWeek = {
+    contributionDays: ContributionDay[];
+};
+
+type PullRequestSearchItem = {
+    created_at: string;
+};
+
 export  async function getContributionStats(){
     try {
         const session = await auth.api.getSession({
@@ -33,8 +46,8 @@ export  async function getContributionStats(){
         // weeks and days are returned by the GitHub query using the
         // exact field names from the GraphQL schema (note the lowercase
         // "contributiondays" and the "data" property for the date).
-        const contribution = calendar.weeks.flatMap((week: any) =>
-            week.contributionDays.map((day: any) => ({
+        const contribution = calendar.weeks.flatMap((week: ContributionWeek) =>
+            week.contributionDays.map((day: ContributionDay) => ({
                 date: day.date,
                 count: day.contributionCount,
                 level: Math.min(4, Math.floor(day.contributionCount / 3)),
@@ -72,8 +85,11 @@ export async function getDashboardstats(){
 
         const {data:user} = await octokit.rest.users.getAuthenticated()
 
-        //todo:fetch total conected repos 
-        const totalRepos = 30
+        const totalRepos = await prisma.repository.count({
+            where:{
+                userId:session.user.id
+            }
+        })
         const calendar = await fetchUserContribution(token, user.login);
         const totalCommits = calendar?.totalContributions || 0;
 
@@ -84,9 +100,13 @@ export async function getDashboardstats(){
 
         const totalPRs = prs.total_count
 
-        //TODo count AI reviews from database
-
-        const totalReviews = 44
+        const totalReviews = await prisma.review.count({
+            where:{
+                repository:{
+                    userId:session.user.id
+                }
+            }
+        })
 
         return {
             totalCommits,
@@ -149,8 +169,8 @@ export async function getMonthlyActivity(){
             monthlydata[monthKey] = {commits:0,prs:0,reviews:0};
         }
 
-        calendar.weeks.forEach((week:any)=>{
-            week.contributionDays.forEach((day:any)=>{
+        calendar.weeks.forEach((week:ContributionWeek)=>{
+            week.contributionDays.forEach((day:ContributionDay)=>{
                 const date = new Date(day.date);
                 const monthKey = monthNames[date.getMonth()];
                 if(monthlydata[monthKey]){
@@ -162,25 +182,28 @@ export async function getMonthlyActivity(){
         const sixMonthsAgo = new Date();
         sixMonthsAgo.setMonth(sixMonthsAgo.getMonth()-6);
 
-    //TODO real time review 
-
-    const generateSampleReviews = () =>{
-        const sampleReviews=[];
-        const now = new Date();
-
-        for(let i=0;i<45;i++){
-            const randomDaysAgo = Math.floor(Math.random()*100);
-            const reviewdate = new Date(now);
-            reviewdate.setDate(reviewdate.getDate()-randomDaysAgo);
-
-            sampleReviews.push({
-                createdAt:reviewdate,
-            });
+    const repositories = await prisma.repository.findMany({
+        where:{
+            userId:session.user.id
+        },
+        select:{
+            id:true
         }
-        return sampleReviews;
-    }
+    })
 
-    const reviews = generateSampleReviews();
+    const reviews = await prisma.review.findMany({
+        where:{
+            repositoryId:{
+                in:repositories.map((repo)=>repo.id)
+            },
+            createdAt:{
+                gte:sixMonthsAgo
+            }
+        },
+        select:{
+            createdAt:true
+        }
+    });
 
     reviews.forEach((review)=>{
         const monthKey = monthNames[review.createdAt.getMonth()];
@@ -190,13 +213,13 @@ export async function getMonthlyActivity(){
     })
 
     const {data:prs} = await octokit.rest.search.issuesAndPullRequests({
-        q:`author:${user.login} type:pr created ${
+        q:`author:${user.login} type:pr created:>=${ 
             sixMonthsAgo.toISOString().split("T")[0]
         }`,
         per_page:100,
     });
 
-    prs.items.forEach((pr:any)=>{
+    prs.items.forEach((pr:PullRequestSearchItem)=>{
         const date = new Date(pr.created_at);
         const monthKey = monthNames[date.getMonth()];
         if(monthlydata[monthKey]){

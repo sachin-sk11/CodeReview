@@ -3,7 +3,10 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import prisma from "./db";
 import {polarClient} from "@/modules/payment/config/polar"
 import {polar, checkout,portal,usage,webhooks} from "@polar-sh/better-auth"
-import { updatePolarCustomerId, updateUserTier } from "@/modules/payment/lib/subscription";
+import { type SubscriptionTier, updatePolarCustomerId, updateUserTier } from "@/modules/payment/lib/subscription";
+
+const normalizeSubscriptionTier = (tier: string | null | undefined): SubscriptionTier =>
+    tier === "PRO" ? "PRO" : "FREE";
 
 
 export const auth = betterAuth({
@@ -66,7 +69,11 @@ export const auth = betterAuth({
                         });
                         
                         if(user){
-                            await updateUserTier(user.id, user.subscriptionTier as any , "CANCELED")
+                            await updateUserTier(
+                                user.id,
+                                normalizeSubscriptionTier(user.subscriptionTier),
+                                "CANCELED"
+                            )
                         }
                     },
                     onSubscriptionRevoked:async(payload)=>{

@@ -114,7 +114,7 @@ export async function disconnectRepository(repositoryId:string){
             throw new Error("Unauthorized")
         }
 
-        const repository = await prisma.repository.findUnique({
+        const repository = await prisma.repository.findFirst({
             where:{
                 id:repositoryId,
                 userId:session.user.id
@@ -129,8 +129,7 @@ export async function disconnectRepository(repositoryId:string){
 
         await prisma.repository.delete({
             where:{
-                id:repositoryId,
-                userId:session.user.id
+                id:repositoryId
             }
         })
         revalidatePath("/dashboard/settings","page")

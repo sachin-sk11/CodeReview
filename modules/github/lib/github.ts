@@ -2,7 +2,21 @@ import {Octokit} from 'octokit';
 import {auth} from "@/lib/auth";
 import prisma from "@/lib/db"
 import { headers } from 'next/headers';
-import { describe } from 'zod/v4/core';
+
+type ContributionDay = {
+    contributionCount: number;
+    date: string;
+    color: string;
+};
+
+type ContributionWeek = {
+    contributionDays: ContributionDay[];
+};
+
+type ContributionCalendar = {
+    totalContributions: number;
+    weeks: ContributionWeek[];
+};
 
 
 /** getting the github access token */
@@ -52,7 +66,7 @@ export async function fetchUserContribution(token: string, username: string) {
         const response = await octokit.graphql<{
             user: {
                 contributionsCollection: {
-                    contributionCalendar: any
+                    contributionCalendar: ContributionCalendar
                 }
             }
         }>(query, { username });
@@ -86,6 +100,11 @@ export const createWebhook = async(owner:string,repo:string)=>{
     const octokit = new Octokit({auth:token});
 
     const webhookUrl = `${process.env.NEXT_PUBLIC_APP_BASE_URL}/api/webhooks/github`
+    const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
+
+    if(!webhookSecret){
+        throw new Error("GITHUB_WEBHOOK_SECRET is not configured");
+    }
 
     const {data:hooks} = await octokit.rest.repos.listWebhooks({
         owner,
@@ -102,7 +121,8 @@ export const createWebhook = async(owner:string,repo:string)=>{
         repo,
         config:{
             url:webhookUrl,
-            content_type:"json"
+            content_type:"json",
+            secret:webhookSecret
         },
         events:["pull_request"]
     });

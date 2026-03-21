@@ -7,6 +7,8 @@ import { createWebhook, getRepository } from "@/modules/github/lib/github"
 import { inngest } from "@/inngest/client"
 import { canConnectRepository,decrementRepositoryCount,incrementRepositoryCount } from "@/modules/payment/lib/subscription"
 
+type GithubRepository = Awaited<ReturnType<typeof getRepository>>[number];
+
 
 export const fetchRepositories = async (page:number=1 ,perPage:number =10)=>{
     const session = await auth.api.getSession({
@@ -27,7 +29,7 @@ export const fetchRepositories = async (page:number=1 ,perPage:number =10)=>{
 
     const connectedRepoIds = new Set(dbRepos.map((repo=>repo.githubId)));
 
-    return githubRepos.map((repo:any)=>({
+    return githubRepos.map((repo:GithubRepository)=>({
         ...repo,
         isConnected:connectedRepoIds.has(BigInt(repo.id)),
     }))
