@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getDashboardstats, getContributionStats, getMonthlyActivity } from "@/modules/dashboard/action";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
   try {
     const stats = await getDashboardstats();
