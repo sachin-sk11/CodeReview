@@ -117,6 +117,7 @@ export async function syncSubscriptionStatus() {
             return { success: true, status };
         }
 
+        await updateUserTier(user.id, "FREE", "EXPIRED");
         return { success: true, status: "NO_SUBSCRIPTION" };
     } catch (error) {
         console.error("Failed to sync subscription:", error);
