@@ -12,6 +12,12 @@ type PolarSubscription = {
     createdAt?: string | Date;
 };
 
+const ACTIVE_POLAR_STATUSES = new Set([
+    "active",
+    "trialing",
+    "uncanceled",
+]);
+
 export interface SubscriptionData{
     user:{
         id:string;
@@ -97,7 +103,7 @@ export async function syncSubscriptionStatus() {
         const subscriptions = (result.result?.items || []) as PolarSubscription[];
 
         // Find the most relevant subscription (active or most recent)
-        const activeSub = subscriptions.find((sub) => sub.status === 'active');
+        const activeSub = subscriptions.find((sub) => ACTIVE_POLAR_STATUSES.has(sub.status));
         const latestSub = [...subscriptions].sort((a, b) => {
             const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
             const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
@@ -111,7 +117,7 @@ export async function syncSubscriptionStatus() {
             // If latest is canceled/expired
             const status = latestSub.status === 'canceled' ? 'CANCELED' : 'EXPIRED';
             // Only downgrade if we are sure it's not active
-            if (latestSub.status !== 'active') {
+            if (!ACTIVE_POLAR_STATUSES.has(latestSub.status)) {
                 await updateUserTier(user.id, "FREE", status, latestSub.id);
             }
             return { success: true, status };

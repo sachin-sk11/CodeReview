@@ -38,7 +38,9 @@ export const auth = betterAuth({
                     authenticatedUsersOnly: true
                 }),
                 portal({
-                    returnUrl:process.env.NEXT_PUBLIC_APP_BASE_URL || "http://localhost:3000/dashboard",
+                    returnUrl:process.env.NEXT_PUBLIC_APP_BASE_URL
+                        ? `${process.env.NEXT_PUBLIC_APP_BASE_URL}/dashboard/subscription`
+                        : "http://localhost:3000/dashboard/subscription",
                 }),
                 usage(),
                 webhooks({
