@@ -61,6 +61,26 @@ async function getUserUsage(userId: string) {
     return usage;
 }
 
+async function syncRepositoryCount(userId: string): Promise<number> {
+    const repositoryCount = await prisma.repository.count({
+        where: { userId },
+    });
+
+    await prisma.userUsage.upsert({
+        where: { userId },
+        create: {
+            userId,
+            repositoryCount,
+            reviewCounts: {},
+        },
+        update: {
+            repositoryCount,
+        },
+    });
+
+    return repositoryCount;
+}
+
 export async function canConnectRepository(userId: string): Promise<boolean> {
     const tier = await getUserTier(userId);
 
@@ -68,10 +88,10 @@ export async function canConnectRepository(userId: string): Promise<boolean> {
         return true; // Unlimited for pro users
     }
 
-    const usage = await getUserUsage(userId);
+    const repositoryCount = await syncRepositoryCount(userId);
     const limit = TIER_LIMITS.FREE.repositories;
 
-    return usage.repositoryCount < limit;
+    return repositoryCount < limit;
 }
 
 
@@ -146,14 +166,15 @@ export async function incrementReviewCount(
 export async function getRemainingLimits(userId: string): Promise<UserLimits> {
     const tier = await getUserTier(userId);
     const usage = await getUserUsage(userId);
+    const repositoryCount = await syncRepositoryCount(userId);
     const reviewCounts = usage.reviewCounts as Record<string, number>;
 
     const limits: UserLimits = {
         tier,
         repositories: {
-            current: usage.repositoryCount,
+            current: repositoryCount,
             limit: tier === "PRO" ? null : TIER_LIMITS.FREE.repositories,
-            canAdd: tier === "PRO" || usage.repositoryCount < TIER_LIMITS.FREE.repositories,
+            canAdd: tier === "PRO" || repositoryCount < TIER_LIMITS.FREE.repositories,
         },
         reviews: {},
     };
@@ -188,7 +209,7 @@ export async function updateUserTier(
         data: {
             subscriptionTier: tier,
             subscriptionStatus: status,
-          
+            polarSubscriptionId: polarSubscriptionId ?? null,
         },
     });
 }

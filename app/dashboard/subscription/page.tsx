@@ -101,6 +101,7 @@ export default function SubscriptionPage(){
     const currentTier = data.user.subscriptionTier as "FREE" | "PRO"
     const isPro = currentTier==="PRO"
     const isActive = data.user.subscriptionStatus === "ACTIVE"
+    const hasBillingAccount = Boolean(data.user.polarCustomerId)
 
     const handleSync = async() =>{
         try {
@@ -244,7 +245,7 @@ export default function SubscriptionPage(){
                                 </div>
                             ))}
                         </div>
-                        {isPro && isActive ?(
+                        {hasBillingAccount ?(
                             <Button 
                                className="w-full"
                                variant="outline"
@@ -257,7 +258,7 @@ export default function SubscriptionPage(){
                                     </>
                                 ):(
                                     <>
-                                    Manage Subscription
+                                    {isPro && isActive ? "Manage Subscription" : "View Billing"}
                                     <ExternalLink className="ml-2 h-4 w-4"/>
                                     </>
                                 )}
@@ -309,7 +310,7 @@ export default function SubscriptionPage(){
                             ))}
                         </div>
                         <Button className="w-full" variant="outline" disabled>
-                            {!isPro ? "Current Plan" : "DownGrade"}
+                            {!isPro ? "Current Plan" : "Managed in Billing Portal"}
                         </Button>
                     </CardContent>
                 </Card>

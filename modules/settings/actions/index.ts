@@ -6,6 +6,7 @@ import prisma from "@/lib/db";
 import {revalidatePath} from "next/cache";
 import { success } from "zod";
 import { deleteWebhook } from "@/modules/github/lib/github";
+import { decrementRepositoryCount } from "@/modules/payment/lib/subscription";
 
 export async function getUserprofile(){
     try {
@@ -132,6 +133,7 @@ export async function disconnectRepository(repositoryId:string){
                 id:repositoryId
             }
         })
+        await decrementRepositoryCount(session.user.id)
         revalidatePath("/dashboard/settings","page")
         revalidatePath("/dashboard/repository","page")
 
@@ -168,6 +170,10 @@ export async function disconnectAllRepository(){
                 userId:session.user.id,
             },
         })
+
+        for(let i = 0; i < result.count; i++){
+            await decrementRepositoryCount(session.user.id)
+        }
 
         revalidatePath("/dashboard/settings","page")
         revalidatePath("/dashboard/repository","page")
