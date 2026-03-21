@@ -10,3 +10,5 @@ export const { GET, POST, PUT } = serve({
     generateReview
   ],
 });
+
+export const maxDuration = 300;

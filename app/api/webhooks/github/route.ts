@@ -43,9 +43,8 @@ export async function POST(req:NextRequest){
             const [owner, repoName] = repo.split("/")
 
             if(action === "opened" || action === "synchronize"){
-                reviewPullRequest(owner, repoName , prNumber)
-                .then(()=>console.log(`Review completed for ${repo} #${prNumber}`))
-                .catch((e)=>console.log(`Review Failed for ${repo} #${prNumber}`))
+                await reviewPullRequest(owner, repoName , prNumber)
+                console.log(`Review queued for ${repo} #${prNumber}`)
             }
         }
 
